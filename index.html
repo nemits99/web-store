@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Management</title>
+    <style>
+        body {
+            display: flex;
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+        .language-selector {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+    
+        }
+
+        .language-selector label {
+            font-size: 14px;
+            margin-right: 8px;
+            font-weight: bold;
+            color: #3b3b3b;
+        }
+
+        #languageSelect {
+           
+            padding: 8px;
+            font-size: 14px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: #fff;
+            color: #3b3b3b;
+            cursor: pointer;
+        }
+
+        #languageSelect:focus {
+            outline: none;
+            border-color: #0080ff;
+        }
+        
+        .sidebar {
+            width: 400px;
+            background-color: #fff;
+            padding: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            border-radius: 5px;
+            margin-right: 20px;
+        }
+        .sidebar h2, .sidebar li {
+            background-color: #0080ff;
+            color: #fff;
+            padding: 12px;
+            font-size: 16px;
+            margin-top: 0;
+        }
+        .form-input {
+            padding: 10px;
+            margin: 5px 0;
+            width: calc(100% - 22px);
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .product-list {
+            width: 100%;
+        }
+        .product {
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin: 5px;
+            display: inline-block;
+            width: calc(18% - 10px);
+            vertical-align: top;
+        }
+        .product h3 {
+            font-size: 14px;
+            color: #3b3b3b;
+        }
+        h1 {
+            margin-top: -10px;
+            text-align: center;
+            padding: 12px;
+            font-size: 18px;
+            background-color: #008000;
+            color: #ffffff;
+        }
+        h4 {
+            padding: 12px;
+            font-size: 18px;
+            background-color: #3b3b3b;
+            color: #ffffff;
+        }
+        .qty-input {
+            padding: 5px;
+            margin-top: 10px;
+            width: 60px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            text-align: center;
+        }
+        button {
+            padding: 6px 15px;
+            background-color: #008000;
+            color: #ffffff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-left: 5px;
+            margin-bottom: 6px;
+        }
+        .btn-beli {
+            background-color: #28a745;
+        }
+        .btn-edit {
+            background-color: #007bff;
+        }
+        .btn-hapus {
+            background-color: #dc3545;
+        }
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 50%;
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        li{
+            background-color: #4e4e4e;
+            color: #ddd;
+            padding: 10px;
+        }
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .product { width: calc(50% - 20px); }
+        }
+        @media (max-width: 480px) {
+            .product { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <label for="languageSelect">Pilih Bahasa / Select Language</label>      
+        <select id="languageSelect" onchange="changeLanguage()">
+            <option value="en">English</option>
+            <option value="id">Indonesia</option>
+        </select>
+        <li id="paymentLabel">Payment</li>
+        <div id="cartItems"></div>
+        <p id="totalUSDLabel"></p>
+      
+
+       
+        <p>Total: $ <span id="totalPrice">0</span></p>
+        <input type="number" id="payment" placeholder="Enter amount of money" class="form-input">
+        <button onclick="checkout()">Checkout</button>
+
+        <h4 id="formProductLabel">Form Product</h4>
+        <input type="text" id="productName" placeholder="Product name" class="form-input">
+        <input type="number" id="productPrice" placeholder="Price" class="form-input">
+        <input type="number" id="productStock" placeholder="Stock" class="form-input">
+        <button onclick="addProduct()" id="addProductButton">Add Product</button>
+        <button onclick="checkLowStock()" id="checkQtyButton">Check Qty (-10)</button>
+
+        <!-- Modal untuk Stok Rendah -->
+        <div id="lowStockModal" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="closeModal()">&times;</span>
+                <h3 id="lowStockTitle">Produk dengan Stok Kurang dari 10:</h3>
+                <div id="lowStockProducts"></div>
+            </div>
+        </div>
+
+        <li id="readProductLabel">Read Product</li>
+        <select id="productDropdown" class="form-input">
+            <option value="">Choose Product</option>
+        </select>
+        <button onclick="openProductDetails()" id="readButton">Read</button>
+
+        <!-- Modal untuk Detail Produk -->
+        <div id="productDetailsModal" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="closeProductDetailsModal()">&times;</span>
+                <h3 id="productDetailsTitle">Detail Product</h3>
+                <div id="productDetails"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="product-list">
+        <h1 id="productListTitle">My Web Store</h1>
+        <li>List Product</li>
+        <div id="productList"></div>
+    </div>
+
+  
+<script>
+
+    const texts = {
+        en: {
+            payment: "Payment",
+            formProduct: "Form Product",
+            addProduct: "Add Product",
+            checkQty: "Check Qty (-10)",
+            readProduct: "Read Product",
+            productList: "List Product",
+            lowStockTitle: "Products with Stock Below 10:",
+            productDetailsTitle: "Product Details",
+            chooseProduct: "Choose Product",
+            read: "Read",
+            totalInIDR: "Total in IDR:"
+        },
+        id: {
+            payment: "Pembayaran",
+            formProduct: "Formulir Produk",
+            addProduct: "Tambah Produk",
+            checkQty: "Cek Stok (-10)",
+            readProduct: "Lihat Produk",
+            productList: "Daftar Produk",
+            lowStockTitle: "Produk dengan Stok Kurang dari 10:",
+            productDetailsTitle: "Detail Produk",
+            chooseProduct: "Pilih Produk",
+            read: "Lihat",
+            totalInIDR: "Total dalam IDR:"
+        }
+    };
+
+    function changeLanguage() {
+        const language = document.getElementById("languageSelect").value;
+        document.getElementById("paymentLabel").innerText = texts[language].payment;
+        document.getElementById("formProductLabel").innerText = texts[language].formProduct;
+        document.getElementById("addProductButton").innerText = texts[language].addProduct;
+        document.getElementById("checkQtyButton").innerText = texts[language].checkQty;
+        document.getElementById("readProductLabel").innerText = texts[language].readProduct;
+        document.getElementById("productListTitle").innerText = texts[language].productList;
+        document.getElementById("lowStockTitle").innerText = texts[language].lowStockTitle;
+        document.getElementById("productDetailsTitle").innerText = texts[language].productDetailsTitle;
+        document.getElementById("productDropdown").querySelector("option").innerText = texts[language].chooseProduct;
+        document.getElementById("readButton").innerText = texts[language].read;
+        document.getElementById("totalIDRLabel").innerText = texts[language].totalInIDR;
+    }
+
+    window.onload = function() {
+        loadProducts();
+        changeLanguage();
+    };
+
+    let products = [];
+    let editIndex = -1;
+
+    function loadProducts() {
+        products = JSON.parse(localStorage.getItem('products')) || [];
+        displayProducts();
+        populateDropdown();
+    }
+
+    function saveProducts() {
+        localStorage.setItem('products', JSON.stringify(products));
+    }
+
+    function addProduct() {
+        const name = document.getElementById('productName').value;
+        const price = parseInt(document.getElementById('productPrice').value);
+        const stock = parseInt(document.getElementById('productStock').value);
+
+        if (!name || isNaN(price) || isNaN(stock) || stock < 0) {
+            alert('Please enter valid product data.');
+            return;
+        }
+
+        if (editIndex === -1) {
+            products.push({ name, price, stock });
+        } else {
+            products[editIndex] = { name, price, stock };
+            editIndex = -1;
+        }
+        saveProducts();
+        clearInputs();
+        displayProducts();
+        populateDropdown();
+    }
+
+    function displayProducts() {
+        const productList = document.getElementById('productList');
+        productList.innerHTML = '';
+        products.forEach((product, index) => {
+            productList.innerHTML += `
+                <div class="product">
+                    <h3>${product.name}</h3>
+                    <p>Price: $ ${product.price}</p>
+                    <p>Stock: ${product.stock}</p>
+                    <input type="number" min="1" max="${product.stock}" value="1" class="qty-input" id="qty${index}">
+                    <button class="btn-beli" onclick="addToCart('${product.name}', ${product.price}, ${index})">Buy</button>
+                    <button class="btn-edit" onclick="editProduct(${index})">Edit</button>
+                    <button class="btn-hapus" onclick="removeProduct(${index})">Delete</button>
+                </div>`;
+        });
+    }
+
+    function populateDropdown() {
+        const dropdown = document.getElementById('productDropdown');
+        dropdown.innerHTML = '<option value="">Choose Product</option>';
+        products.forEach((product, index) => {
+            dropdown.innerHTML += `<option value="${index}">${product.name}</option>`;
+        });
+    }
+
+    function openProductDetails() {
+        const selectedIndex = document.getElementById('productDropdown').value;
+        if (selectedIndex === '') return;
+        const product = products[selectedIndex];
+        document.getElementById('productDetails').innerHTML = `
+            <p>Product name: ${product.name}</p>
+            <p>Price: $ ${product.price}</p>
+            <p>Stock: ${product.stock}</p>`;
+        document.getElementById('productDetailsModal').style.display = 'block';
+    }
+
+    function closeProductDetailsModal() {
+        document.getElementById('productDetailsModal').style.display = 'none';
+    }
+
+    function checkLowStock() {
+        const lowStockProducts = products.filter(product => product.stock < 10);
+        document.getElementById('lowStockProducts').innerHTML = lowStockProducts.length
+            ? lowStockProducts.map(product => `<p>${product.name} - Stok: ${product.stock}</p>`).join('')
+            : '<p>All products have sufficient stock.</p>';
+        document.getElementById('lowStockModal').style.display = 'block';
+    }
+
+    function closeModal() {
+        document.getElementById('lowStockModal').style.display = 'none';
+    }
+
+    function addToCart(name, price, index) {
+        const quantity = parseInt(document.getElementById(`qty${index}`).value);
+        if (quantity > products[index].stock) {
+            alert('Stock is not enough.');
+            return;
+        }
+        const cartItems = document.getElementById('cartItems');
+        cartItems.innerHTML += `<p>${name} -  ${price} x ${quantity}</p>`;
+        products[index].stock -= quantity;
+        saveProducts();
+        displayProducts();
+        updateTotal();
+    }
+
+    function updateTotal() {
+    let total = 0;
+
+    // Hitung total dari item di dalam keranjang
+    document.querySelectorAll('#cartItems p').forEach(item => {
+        const [_, price, quantity] = item.textContent.match(/(\d+) x (\d+)/).map(Number);
+        total += price * quantity;
+    });
+
+    // Tampilkan total sebagai angka tanpa simbol atau format rupiah
+    document.getElementById('totalPrice').innerText = total;
+}
+
+
+    function checkout() {
+        const payment = parseInt(document.getElementById('payment').value);
+        const totalPrice = parseInt(document.getElementById('totalPrice').innerText);
+
+        if (isNaN(payment) || payment < totalPrice) {
+            alert('Pembayaran tidak mencukupi.');
+            return;
+        }
+
+        const change = payment - totalPrice;
+        alert(`Payment successful. change: $${change}`);
+
+        document.getElementById('cartItems').innerHTML = '';
+        document.getElementById('totalPrice').innerText = '0';
+        document.getElementById('payment').value = '';
+    }
+
+    function editProduct(index) {
+        const product = products[index];
+        document.getElementById('productName').value = product.name;
+        document.getElementById('productPrice').value = product.price;
+        document.getElementById('productStock').value = product.stock;
+        editIndex = index;
+    }
+
+    function removeProduct(index) {
+        products.splice(index, 1);
+        saveProducts();
+        displayProducts();
+        populateDropdown();
+    }
+
+    function clearInputs() {
+        document.getElementById('productName').value = '';
+        document.getElementById('productPrice').value = '';
+        document.getElementById('productStock').value = '';
+    }
+
+ 
+
+    window.onload = loadProducts;
+</script>
+
+    
+</body>
+</html>
